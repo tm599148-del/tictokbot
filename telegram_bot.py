@@ -11,6 +11,17 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 import asyncio
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv is optional
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 # Fix Windows encoding issue
 if sys.platform == 'win32':
     try:

@@ -23,11 +23,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Bot data
-bot_data.json
-*.json
+# Environment variables
+.env
+.env.local
 
-# Logs
+# Data files
+bot_data.json
+*.txt
 *.log
 
 # IDE
@@ -40,9 +42,6 @@ bot_data.json
 # OS
 .DS_Store
 Thumbs.db
-
-# Valid codes file
-VALID_TICTAC_COUPONS_LIVE.txt
 
 # Test files
 test_bot.py
