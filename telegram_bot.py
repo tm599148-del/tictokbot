@@ -42,6 +42,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "8208170457:AAEznHYzZw6VDSjrK5VDoL88rVwuEUGVi
 ADMIN_ID = int(os.getenv("ADMIN_ID", "7200333065"))
 GROUP_LINK = os.getenv("GROUP_LINK", "https://t.me/shien_help")
 GROUP_USERNAME = os.getenv("GROUP_USERNAME", "shien_help")  # Without @
+LIVE_CHANNEL_ID = os.getenv("LIVE_CHANNEL_ID", None)  # Channel ID for live valid codes (optional)
 
 # Mining Configuration
 NUM_THREADS = 10
@@ -189,7 +190,7 @@ def mining_worker(user_id, phone, app, stop_event):
                 stats['valid'] += 1
                 save_valid_code(user_id, code)
                 
-                # Send notification to user
+                # Send notification to user who found it
                 try:
                     asyncio.run_coroutine_threadsafe(
                         app.bot.send_message(
@@ -201,6 +202,26 @@ def mining_worker(user_id, phone, app, stop_event):
                     )
                 except:
                     pass
+                
+                # Broadcast to all verified users (live valid codes)
+                try:
+                    data = load_data()
+                    for uid_str in data.keys():
+                        uid = int(uid_str)
+                        if uid in verified_users and uid != user_id:  # Don't send to finder again
+                            try:
+                                asyncio.run_coroutine_threadsafe(
+                                    app.bot.send_message(
+                                        chat_id=uid,
+                                        text=f"🔥 *LIVE VALID CODE!*\n\n`{code}`\n\n✅ New valid code found by another miner!",
+                                        parse_mode='Markdown'
+                                    ),
+                                    app._loop
+                                )
+                            except:
+                                pass
+                except Exception as e:
+                    print(f"Error broadcasting code: {e}")
             
             # Update stats every 100 codes (less spam)
             if stats['checked'] % 100 == 0:
@@ -429,6 +450,38 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
         await query.edit_message_text(stats_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
     
+    elif data == "live_codes":
+        # Show live valid codes from all users
+        data_dict = load_data()
+        all_codes = []
+        
+        for uid, user_data in data_dict.items():
+            for code in user_data.get('valid_codes', []):
+                username = user_data.get('username', f"User_{uid[:8]}")
+                all_codes.append({
+                    'code': code,
+                    'user': username
+                })
+        
+        if not all_codes:
+            await query.edit_message_text("❌ No valid codes found yet. Start mining to find codes!")
+            return
+        
+        codes_text = f"🔥 *LIVE VALID CODES* ({len(all_codes)} total)\n\n```\n"
+        
+        for item in all_codes[-30:]:
+            codes_text += f"{item['code']} - {item['user']}\n"
+        
+        codes_text += "```\n"
+        
+        if len(all_codes) > 30:
+            codes_text += f"\n_Showing last 30 codes. Total: {len(all_codes)}_\n"
+        
+        codes_text += "\n💡 *Tip:* Use /live command for full list!"
+        
+        keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
+        await query.edit_message_text(codes_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+    
     elif data == "my_codes":
         user_data = get_user_data(user_id)
         codes = user_data['valid_codes']
@@ -587,6 +640,49 @@ async def setphone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_data(data)
     await update.message.reply_text(f"✅ Phone number set to: `{phone}`\n\nYou can now start mining!", parse_mode='Markdown')
 
+async def live_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show live valid codes from all users"""
+    user_id = update.effective_user.id
+    
+    # Check if user is verified
+    if user_id not in verified_users and user_id != ADMIN_ID:
+        await update.message.reply_text("⚠️ Please verify first using /start")
+        return
+    
+    data = load_data()
+    all_codes = []
+    
+    # Collect all valid codes with user info
+    for uid, user_data in data.items():
+        for code in user_data.get('valid_codes', []):
+            username = user_data.get('username', f"User_{uid[:8]}")
+            all_codes.append({
+                'code': code,
+                'user': username,
+                'timestamp': user_data.get('created_at', '')
+            })
+    
+    if not all_codes:
+        await update.message.reply_text("❌ No valid codes found yet. Start mining to find codes!")
+        return
+    
+    # Sort by most recent (if we had timestamps, but for now just show all)
+    codes_text = f"🔥 *LIVE VALID CODES* ({len(all_codes)} total)\n\n"
+    codes_text += "```\n"
+    
+    # Show last 50 codes
+    for item in all_codes[-50:]:
+        codes_text += f"{item['code']} - {item['user']}\n"
+    
+    codes_text += "```\n"
+    
+    if len(all_codes) > 50:
+        codes_text += f"\n_Showing last 50 codes. Total: {len(all_codes)}_\n"
+    
+    codes_text += "\n💡 *Tip:* Start mining to find more codes!"
+    
+    await update.message.reply_text(codes_text, parse_mode='Markdown')
+
 def main():
     """Start the bot"""
     try:
@@ -606,6 +702,7 @@ def main():
         # Add handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("setphone", setphone))
+        application.add_handler(CommandHandler("live", live_codes))
         application.add_handler(CallbackQueryHandler(button_handler))
         
         # Start bot
