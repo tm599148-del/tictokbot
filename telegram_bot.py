@@ -334,6 +334,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("⏹️ Stop Mining", callback_data="stop_mining")],
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
             [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
+            [InlineKeyboardButton("🔥 Live Valid Codes", callback_data="live_codes")],
         ]
         
         if user_id == ADMIN_ID:
@@ -592,6 +593,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("⏹️ Stop Mining", callback_data="stop_mining")],
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
             [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
+            [InlineKeyboardButton("🔥 Live Valid Codes", callback_data="live_codes")],
         ]
         
         if user_id == ADMIN_ID:
