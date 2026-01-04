@@ -1,0 +1,15 @@
+services:
+  - type: worker
+    name: tictac-telegram-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python telegram_bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: GROUP_LINK
+        sync: false
+      - key: GROUP_USERNAME
+        sync: false
