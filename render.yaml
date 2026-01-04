@@ -1,6 +1,6 @@
 services:
   - type: worker
-    name: tictac-telegram-bot
+    name: tictokbot
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: python telegram_bot.py
