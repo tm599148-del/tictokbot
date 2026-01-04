@@ -1,22 +1,34 @@
+import os
+import sys
+import subprocess
+
+# Ensure critical packages exist even if Render skips build step
+def ensure_package(pkg, import_name=None):
+    name = import_name or pkg.split("==")[0].replace('-', '_')
+    try:
+        __import__(name)
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+
+required_packages = [
+    ("requests", "requests"),
+    ("python-telegram-bot==20.8", "telegram"),
+    ("python-dotenv", "dotenv"),
+]
+
+for pkg, module in required_packages:
+    ensure_package(pkg, module)
+
 import requests
 import random
 import string
 import time
 import json
 import threading
-import os
-import sys
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 import asyncio
-
-# Load environment variables from .env file
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass  # dotenv is optional
 from dotenv import load_dotenv
 
 # Load environment variables
