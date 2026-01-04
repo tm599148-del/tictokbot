@@ -1,1 +1,1 @@
-worker: python telegram_bot.py
+worker: pip install -r requirements.txt && python telegram_bot.py
