@@ -3,7 +3,7 @@ services:
     name: tictokbot
     env: python
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: python telegram_bot.py
+    startCommand: bash start.sh
     plan: free
     envVars:
       - key: BOT_TOKEN
