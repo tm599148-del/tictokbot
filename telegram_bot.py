@@ -13,7 +13,6 @@ def ensure_package(pkg, import_name=None):
 required_packages = [
     ("requests", "requests"),
     ("python-telegram-bot==20.8", "telegram"),
-    ("python-dotenv", "dotenv"),
 ]
 
 for pkg, module in required_packages:
@@ -29,10 +28,6 @@ from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 import asyncio
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 # Fix Windows encoding issue
 if sys.platform == 'win32':
