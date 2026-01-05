@@ -9,7 +9,7 @@
    ADMIN_ID=7200333065
    GROUP_LINK=https://t.me/+w7VwgotOFrRkNTM1
    GROUP_USERNAME=w7VwgotOFrRkNTM1
-   START_PREFIXES=T,D
+   START_PREFIXES=T,M
    ```
 5. Deploy. Logs should show “Bot is running! Press Ctrl+C to stop.”
 

@@ -30,12 +30,12 @@ REAL_PHONE = "9876543210"          #Add any random 10 digit number or remain sam
 NUM_THREADS = 20
 NUM_CODES_TO_TRY = 100000         
 DELAY_PER_REQUEST = 0.5
-START_PREFIXES = [p.strip().upper() for p in os.getenv("START_PREFIXES", "T,D").split(",") if p.strip()]
+START_PREFIXES = [p.strip().upper() for p in os.getenv("START_PREFIXES", "T,M").split(",") if p.strip()]
 SAVE_FILE = "VALID_TICTAC_COUPONS_LIVEs.txt"
 
-BASE_URL = "https://www.scanandwinpromo.tictac.com"
-REGISTER_URL = f"{BASE_URL}/in/en/xp/scanandwinpromo/home/register/"
-OTP_URL = f"{BASE_URL}/in/en/xp/scanandwinpromo/home/generateOTP/"
+BASE_URL = "https://jarpecarpromo.tictac.com"
+REGISTER_URL = f"{BASE_URL}/in/en/xp/jarpecarpromo/home/register/"
+OTP_URL = f"{BASE_URL}/in/en/xp/jarpecarpromo/home/generateOTP/"
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Linux; Android 10; RMX2030) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.116 Mobile Safari/537.36',

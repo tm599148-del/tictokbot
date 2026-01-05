@@ -75,7 +75,7 @@ Edit `telegram_bot.py` to change:
 - `ADMIN_ID` - Admin user ID
 - `NUM_THREADS` - Number of threads per user (default: 10)
 - `DELAY_PER_REQUEST` - Delay between requests (default: 0.5s)
-- `START_PREFIXES` - Comma-separated letters to force coupon prefixes (default: `T,D`; leave empty for random)
+- `START_PREFIXES` - Comma-separated letters to force coupon prefixes (default: `T,M`; leave empty for random)
 
 ## Data Storage
 
