@@ -213,22 +213,33 @@ def mining_worker(user_id, phone, app, stop_event):
                 # Broadcast to all verified users (live valid codes)
                 try:
                     data = load_data()
-                    for uid_str in data.keys():
+                    for uid_str, user_data in data.items():
                         uid = int(uid_str)
-                        if uid in verified_users and uid != user_id:  # Don't send to finder again
+                        if uid not in verified_users:
+                            continue
+
+                        if uid == user_id:
+                            continue  # already notified
+
+                        if user_data.get("log_live_valid", False):
                             try:
                                 asyncio.run_coroutine_threadsafe(
                                     app.bot.send_message(
                                         chat_id=uid,
-                                        text=f"🔥 *LIVE VALID CODE!*\n\n`{code}`\n\n✅ New valid code found by another miner!",
+                                        text=(
+                                            f"🔥 *LIVE VALID CODE!*\n\n"
+                                            f"`{code}`\n"
+                                            f"Finder: `{user_data.get('username', 'Unknown')}`\n"
+                                            f"Saved in shared log!"
+                                        ),
                                         parse_mode='Markdown'
                                     ),
                                     app._loop
                                 )
-                            except:
-                                pass
+                            except Exception as e:
+                                print(f\"Error sending live code to {uid}: {e}\")
                 except Exception as e:
-                    print(f"Error broadcasting code: {e}")
+                    print(f\"Error broadcasting code: {e}\")
             
             # Update stats every 100 codes (less spam)
             if stats['checked'] % 100 == 0:
@@ -342,6 +353,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
             [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
             [InlineKeyboardButton("🔥 Live Valid Codes", callback_data="live_codes")],
+            [InlineKeyboardButton("📣 Toggle Live Log", callback_data="toggle_live_log")],
         ]
         
         if user_id == ADMIN_ID:
@@ -384,6 +396,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("⏹️ Stop Mining", callback_data="stop_mining")],
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
             [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
+            [InlineKeyboardButton("📣 Toggle Live Log", callback_data="toggle_live_log")],
         ]
         
         if user_id == ADMIN_ID:
@@ -490,6 +503,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
         await query.edit_message_text(codes_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
     
+    elif data == "toggle_live_log":
+        data_dict = load_data()
+        user_data = data_dict.get(str(user_id), {})
+        new_state = not user_data.get("log_live_valid", False)
+        user_data["log_live_valid"] = new_state
+        data_dict[str(user_id)] = user_data
+        save_data(data_dict)
+
+        status = "ON" if new_state else "OFF"
+        keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
+        await query.edit_message_text(
+            f"📣 Live valid code logs are now *{status}*.\n\n"
+            "When ON, you will get real-time logged codes similar to the VALID_TICTAC_COUPONS file.",
+            parse_mode='Markdown',
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
     elif data == "my_codes":
         user_data = get_user_data(user_id)
         codes = user_data['valid_codes']
