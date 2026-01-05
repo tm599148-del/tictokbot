@@ -101,13 +101,12 @@ def update_status_message(user_id, stats, app, force=False):
         f"Updated: {datetime.now().strftime('%H:%M:%S')}"
     )
     try:
-        asyncio.run_coroutine_threadsafe(
+        app.create_task(
             app.bot.edit_message_text(
                 chat_id=user_id,
                 message_id=message_id,
                 text=text
-            ),
-            app._loop
+            )
         )
     except Exception as e:
         print(f"Error updating status message for {user_id}: {e}")
@@ -244,12 +243,11 @@ def mining_worker(user_id, phone, app, stop_event):
                 
                 # Send notification to user who found it
                 try:
-                    asyncio.run_coroutine_threadsafe(
+                    app.create_task(
                         app.bot.send_message(
                             chat_id=user_id,
                             text=f"🎉 VALID CODE FOUND!\n\nCode: {code}\nSaved to your account!"
-                        ),
-                        app._loop
+                        )
                     )
                 except:
                     pass
@@ -267,7 +265,7 @@ def mining_worker(user_id, phone, app, stop_event):
 
                         if user_data.get("log_live_valid", False):
                             try:
-                                asyncio.run_coroutine_threadsafe(
+                                app.create_task(
                                     app.bot.send_message(
                                         chat_id=uid,
                                         text=(
@@ -276,8 +274,7 @@ def mining_worker(user_id, phone, app, stop_event):
                                             f"Finder: {user_data.get('username', 'Unknown')}\n"
                                             "Saved in shared log!"
                                         )
-                                    ),
-                                    app._loop
+                                    )
                                 )
                             except Exception as e:
                                 print(f"Error sending live code to {uid}: {e}")
@@ -292,12 +289,11 @@ def mining_worker(user_id, phone, app, stop_event):
                         summary_text += f"Total Valid Codes: {len(milestone_data['valid_codes'])}\n"
                         summary_text += "Last 10 codes:\n"
                         summary_text += "\n".join(recent_codes)
-                        asyncio.run_coroutine_threadsafe(
+                        app.create_task(
                             app.bot.send_message(
                                 chat_id=user_id,
                                 text=summary_text
-                            ),
-                            app._loop
+                            )
                         )
                     except Exception as e:
                         print(f"Error sending milestone summary to {user_id}: {e}")
@@ -305,12 +301,11 @@ def mining_worker(user_id, phone, app, stop_event):
             # Update stats every 100 codes (less spam)
             if stats['checked'] % 100 == 0:
                 try:
-                    asyncio.run_coroutine_threadsafe(
+                    app.create_task(
                         app.bot.send_message(
                             chat_id=user_id,
                             text=f"📊 Mining Progress\n\nChecked: {stats['checked']:,}\nValid: {stats['valid']}"
-                        ),
-                        app._loop
+                        )
                     )
                 except:
                     pass
@@ -333,7 +328,7 @@ def mining_worker(user_id, phone, app, stop_event):
     # Final stats
     try:
         user_data = get_user_data(user_id)
-        asyncio.run_coroutine_threadsafe(
+        app.create_task(
             app.bot.send_message(
                 chat_id=user_id,
                 text=(
@@ -342,8 +337,7 @@ def mining_worker(user_id, phone, app, stop_event):
                     f"Valid Found: {stats['valid']}\n"
                     f"Total Valid Codes: {len(user_data['valid_codes'])}"
                 )
-            ),
-            app._loop
+            )
         )
     except:
         pass
@@ -357,13 +351,12 @@ def mining_worker(user_id, phone, app, stop_event):
                 f"Valid Found: {stats['valid']}\n"
                 f"Last Code: {stats.get('last_code', '--')}"
             )
-            asyncio.run_coroutine_threadsafe(
+            app.create_task(
                 app.bot.edit_message_text(
                     chat_id=user_id,
                     message_id=miner_state['status_message_id'],
                     text=final_text
-                ),
-                app._loop
+                )
             )
             miner_state['status_message_id'] = None
     except Exception as e:
