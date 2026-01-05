@@ -57,7 +57,7 @@ DELAY_PER_REQUEST = 0.5
 START_PREFIXES = [p.strip().upper() for p in os.getenv("START_PREFIXES", "T,D").split(",") if p.strip()]
 
 # API Configuration
-BASE_URL = "https://www.tictac.com"
+BASE_URL = "https://www.scanandwinpromo.tictac.com"
 REGISTER_URL = f"{BASE_URL}/in/en/xp/scanandwinpromo/home/register/"
 OTP_URL = f"{BASE_URL}/in/en/xp/scanandwinpromo/home/generateOTP/"
 
@@ -215,10 +215,16 @@ def check_coupon(code, session, phone):
             return False, "Bad response"
 
         status = result.get('status')
+        message = result.get('message', '')
+        
+        # Check if campaign is not live
+        if message and ('not yet live' in message.lower() or 'campaign is not' in message.lower() or 'not live' in message.lower()):
+            return False, "Campaign Not Live"
+        
         if status == 'success':
             return True, "VALID"
         else:
-            return False, "Invalid"
+            return False, message if message else "Invalid"
 
     except requests.exceptions.Timeout:
         return False, "Timeout"
