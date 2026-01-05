@@ -1143,6 +1143,7 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("setphone", setphone))
         application.add_handler(CommandHandler("setprefix", setprefix))
+        application.add_handler(CommandHandler("checkcodes", checkcodes))
         application.add_handler(CommandHandler("live", live_codes))
         application.add_handler(CallbackQueryHandler(button_handler))
         
