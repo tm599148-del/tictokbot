@@ -75,7 +75,7 @@ Edit `telegram_bot.py` to change:
 - `ADMIN_ID` - Admin user ID
 - `NUM_THREADS` - Number of threads per user (default: 10)
 - `DELAY_PER_REQUEST` - Delay between requests (default: 0.5s)
-- `START_WITH_D` - Generate codes starting with 'D' (default: True)
+- `START_LETTER` - Force coupons to start with a specific letter (default: `T`; leave empty for random)
 
 ## Data Storage
 

@@ -54,7 +54,7 @@ LIVE_CHANNEL_ID = os.getenv("LIVE_CHANNEL_ID", None)  # Channel ID for live vali
 # Mining Configuration
 NUM_THREADS = 10
 DELAY_PER_REQUEST = 0.5
-START_WITH_D = True
+START_LETTER = os.getenv("START_LETTER", "T").strip().upper() or None
 
 # API Configuration
 BASE_URL = "https://www.tictac.com"
@@ -140,7 +140,8 @@ def save_valid_code(user_id, code):
 def generate_coupon():
     """Generate random coupon code"""
     chars = string.ascii_uppercase + string.digits
-    prefix = 'D' if START_WITH_D else random.choice(string.ascii_uppercase)
+    forced = START_LETTER[0] if START_LETTER and START_LETTER[0].isalpha() else None
+    prefix = forced or random.choice(string.ascii_uppercase)
     return prefix + ''.join(random.choice(chars) for _ in range(5))
 
 def check_coupon(code, session, phone):

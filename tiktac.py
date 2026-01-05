@@ -30,8 +30,8 @@ REAL_PHONE = "9876543210"          #Add any random 10 digit number or remain sam
 NUM_THREADS = 20
 NUM_CODES_TO_TRY = 100000         
 DELAY_PER_REQUEST = 0.5
-START_WITH_D = True
-SAVE_FILE = "VALID_TICTAC_COUPONS_LIVE.txt"
+START_LETTER = os.getenv("START_LETTER", "T").strip().upper() or None
+SAVE_FILE = "VALID_TICTAC_COUPONS_LIVEs.txt"
 
 BASE_URL = "https://www.tictac.com"
 REGISTER_URL = f"{BASE_URL}/in/en/xp/scanandwinpromo/home/register/"
@@ -77,7 +77,8 @@ def save_valid_coupon(code):
 
 def generate_coupon():
     chars = string.ascii_uppercase + string.digits
-    prefix = 'D' if START_WITH_D else random.choice(string.ascii_uppercase)
+    forced = START_LETTER[0] if START_LETTER and START_LETTER[0].isalpha() else None
+    prefix = forced or random.choice(string.ascii_uppercase)
     return prefix + ''.join(random.choice(chars) for _ in range(5))
 
 
