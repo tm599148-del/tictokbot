@@ -26,7 +26,7 @@ if sys.platform == 'win32':
     except:
         pass
 
-REAL_PHONE = "9876543741"          #Add any random 10 digit number or remain same 
+REAL_PHONE = "9876543223"          #Add any random 10 digit number or remain same 
 NUM_THREADS = 20
 NUM_CODES_TO_TRY = 100000         
 DELAY_PER_REQUEST = 0.5
@@ -120,22 +120,18 @@ def worker(thread_id, codes_to_check, phone):
         with stats_lock:
             total_checked += 1
 
-        print(f"{Colors.OKBLUE}[Thread {thread_id:2d}]{Colors.ENDC} Testing → {Colors.BOLD}{code}{Colors.ENDC}", end="", flush=True)
-
         is_valid, msg = check_coupon(code, session, phone)
 
         if is_valid:
             with stats_lock:
                 valid_found += 1
-            print(f"  →  {Colors.OKGREEN}✓ {msg}{Colors.ENDC}", flush=True)
+            print(f"{Colors.OKBLUE}[Thread {thread_id:2d}]{Colors.ENDC} Testing → {Colors.BOLD}{code}{Colors.ENDC}  →  {Colors.OKGREEN}✓ {msg}{Colors.ENDC}", flush=True)
             save_valid_coupon(code)
             print(f"{Colors.OKGREEN}{Colors.BOLD}╔══════════════════════════════════════════╗{Colors.ENDC}", flush=True)
             print(f"{Colors.OKGREEN}{Colors.BOLD}║        🎉 VALID CODE FOUND! 🎉           ║{Colors.ENDC}", flush=True)
             print(f"{Colors.OKGREEN}{Colors.BOLD}║        Code: {code:>6}                         ║{Colors.ENDC}", flush=True)
             print(f"{Colors.OKGREEN}{Colors.BOLD}║        Saved to {SAVE_FILE}       ║{Colors.ENDC}", flush=True)
             print(f"{Colors.OKGREEN}{Colors.BOLD}╚══════════════════════════════════════════╝{Colors.ENDC}\n", flush=True)
-        else:
-            print(f"  →  {Colors.FAIL}✗ {msg}{Colors.ENDC}", flush=True)
 
         time.sleep(DELAY_PER_REQUEST)
 
