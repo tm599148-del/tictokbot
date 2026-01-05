@@ -957,6 +957,63 @@ async def setphone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_data(data)
     await update.message.reply_text(f"✅ Phone number set: {phone}\n\nYou can now start scanning!")
 
+async def setprefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Set prefix letters for code generation"""
+    user_id = update.effective_user.id
+    
+    if not context.args:
+        await update.message.reply_text(
+            "❌ Please provide prefix letters!\n\n"
+            "Usage: /setprefix T,M\n\n"
+            "Example: /setprefix T,M,D\n"
+            "Example: /setprefix T\n"
+            "Example: /setprefix M"
+        )
+        return
+    
+    prefixes = context.args[0].strip().upper()
+    
+    # Basic validation - check if all characters are letters
+    prefix_list = [p.strip() for p in prefixes.split(",") if p.strip()]
+    valid_prefixes = []
+    for p in prefix_list:
+        if p and p[0].isalpha():
+            valid_prefixes.append(p[0])  # Only take first letter
+    
+    if not valid_prefixes:
+        await update.message.reply_text(
+            "❌ Invalid prefix format. Please provide comma-separated letters.\n\n"
+            "Example: /setprefix T,M,D\n"
+            "Example: /setprefix T"
+        )
+        return
+    
+    final_prefixes = ",".join(valid_prefixes)
+    
+    username = update.effective_user.username or update.effective_user.first_name
+    data = load_data()
+    user_id_str = str(user_id)
+    if user_id_str not in data:
+        data[user_id_str] = {
+            'valid_codes': [],
+            'total_checked': 0,
+            'valid_found': 0,
+            'phone': '9876543210',
+            'prefixes': final_prefixes,
+            'username': username or f"User_{user_id_str[:8]}",
+            'created_at': datetime.now().isoformat()
+        }
+    else:
+        data[user_id_str]['prefixes'] = final_prefixes
+        if username:
+            data[user_id_str]['username'] = username
+    
+    save_data(data)
+    await update.message.reply_text(
+        f"✅ Prefix updated: {final_prefixes}\n\n"
+        f"Codes will now be generated starting with: {', '.join(valid_prefixes)}"
+    )
+
 async def checkcodes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Bulk code checker - check multiple codes at once"""
     user_id = update.effective_user.id
