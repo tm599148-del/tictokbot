@@ -78,6 +78,11 @@ verified_users = set()  # Store verified user IDs
 file_lock = threading.Lock()
 
 
+def schedule_coroutine(app, coroutine):
+    """Safely run a coroutine from worker threads"""
+    asyncio.run_coroutine_threadsafe(coroutine, app.loop)
+
+
 def update_status_message(user_id, stats, app, force=False):
     """Edit the live status message for a user"""
     miner_state = active_miners.get(user_id)
@@ -101,7 +106,8 @@ def update_status_message(user_id, stats, app, force=False):
         f"Updated: {datetime.now().strftime('%H:%M:%S')}"
     )
     try:
-        app.create_task(
+        schedule_coroutine(
+            app,
             app.bot.edit_message_text(
                 chat_id=user_id,
                 message_id=message_id,
@@ -243,7 +249,8 @@ def mining_worker(user_id, phone, app, stop_event):
                 
                 # Send notification to user who found it
                 try:
-                    app.create_task(
+                    schedule_coroutine(
+                        app,
                         app.bot.send_message(
                             chat_id=user_id,
                             text=f"🎉 VALID CODE FOUND!\n\nCode: {code}\nSaved to your account!"
@@ -265,7 +272,8 @@ def mining_worker(user_id, phone, app, stop_event):
 
                         if user_data.get("log_live_valid", False):
                             try:
-                                app.create_task(
+                                schedule_coroutine(
+                                    app,
                                     app.bot.send_message(
                                         chat_id=uid,
                                         text=(
@@ -289,7 +297,8 @@ def mining_worker(user_id, phone, app, stop_event):
                         summary_text += f"Total Valid Codes: {len(milestone_data['valid_codes'])}\n"
                         summary_text += "Last 10 codes:\n"
                         summary_text += "\n".join(recent_codes)
-                        app.create_task(
+                        schedule_coroutine(
+                            app,
                             app.bot.send_message(
                                 chat_id=user_id,
                                 text=summary_text
@@ -301,7 +310,8 @@ def mining_worker(user_id, phone, app, stop_event):
             # Update stats every 100 codes (less spam)
             if stats['checked'] % 100 == 0:
                 try:
-                    app.create_task(
+                    schedule_coroutine(
+                        app,
                         app.bot.send_message(
                             chat_id=user_id,
                             text=f"📊 Mining Progress\n\nChecked: {stats['checked']:,}\nValid: {stats['valid']}"
@@ -328,7 +338,8 @@ def mining_worker(user_id, phone, app, stop_event):
     # Final stats
     try:
         user_data = get_user_data(user_id)
-        app.create_task(
+        schedule_coroutine(
+            app,
             app.bot.send_message(
                 chat_id=user_id,
                 text=(
@@ -351,7 +362,8 @@ def mining_worker(user_id, phone, app, stop_event):
                 f"Valid Found: {stats['valid']}\n"
                 f"Last Code: {stats.get('last_code', '--')}"
             )
-            app.create_task(
+            schedule_coroutine(
+                app,
                 app.bot.edit_message_text(
                     chat_id=user_id,
                     message_id=miner_state['status_message_id'],
