@@ -97,11 +97,20 @@ def update_status_message(user_id, stats, app, force=False):
         if now - last_push < 5:
             return
     miner_state['last_status_push'] = now
+    checked = stats.get('checked', 0)
+    last_hundred = checked % 100
+    percent = int((last_hundred / 100) * 100)
+    bar_slots = 20
+    filled_slots = max(0, min(bar_slots, int(bar_slots * percent / 100)))
+    bar = "█" * filled_slots + "░" * (bar_slots - filled_slots)
+    next_target = 100 - last_hundred if last_hundred != 0 else 100
     text = (
         "⚙️ Live Mining Status\n"
-        f"Checked: {stats.get('checked', 0):,}\n"
+        f"Checked: {checked:,}\n"
         f"Valid: {stats.get('valid', 0)}\n"
         f"Last Code: {stats.get('last_code', '--')}\n"
+        f"Progress (last 100): [{bar}] {percent}%\n"
+        f"Next milestone in {next_target} checks\n"
         f"Threads Active: {NUM_THREADS}\n"
         f"Updated: {datetime.now().strftime('%H:%M:%S')}"
     )

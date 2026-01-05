@@ -93,6 +93,7 @@ User data is stored in `bot_data.json`:
 - Mining runs continuously until stopped
 - Multiple users can mine simultaneously
 - Each mining session shows a live status message with last checked code
+- Live status includes a 0‑100 progress bar (with remaining checks) for current batch
 - Users receive a summary message for every 10 valid codes they find
 - Admin can access all users' data
 
