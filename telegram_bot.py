@@ -956,6 +956,124 @@ async def setphone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_data(data)
     await update.message.reply_text(f"✅ Phone number set: {phone}\n\nYou can now start scanning!")
 
+async def checkcodes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Bulk code checker - check multiple codes at once"""
+    user_id = update.effective_user.id
+    
+    # Check if user is verified
+    if user_id not in verified_users and user_id != ADMIN_ID:
+        await update.message.reply_text("⚠️ Please verify first using /start")
+        return
+    
+    if not context.args:
+        await update.message.reply_text(
+            "✅ Bulk Code Checker\n\n"
+            "Send codes to check (one per line or comma separated):\n\n"
+            "Example:\n"
+            "/checkcodes T7GXG7 MZE689 TK2PP2\n\n"
+            "Or send codes in message:\n"
+            "/checkcodes T7GXG7\nMZE689\nTK2PP2"
+        )
+        return
+    
+    user_data = get_user_data(user_id)
+    phone = user_data.get('phone', '9876543210')
+    
+    # Get codes from arguments or message text
+    message_text = update.message.text
+    if message_text:
+        # Try to extract codes from the message
+        lines = message_text.split('\n')
+        codes = []
+        for line in lines:
+            line = line.strip()
+            if line.startswith('/checkcodes'):
+                line = line.replace('/checkcodes', '').strip()
+            if line:
+                # Split by comma or space
+                parts = line.replace(',', ' ').split()
+                codes.extend([p.strip().upper() for p in parts if p.strip() and len(p.strip()) >= 4])
+    else:
+        codes = [code.strip().upper() for code in ' '.join(context.args).replace(',', ' ').split() if code.strip()]
+    
+    if not codes:
+        await update.message.reply_text("❌ No valid codes found! Please send codes to check.")
+        return
+    
+    if len(codes) > 50:
+        await update.message.reply_text("❌ Maximum 50 codes allowed at once!")
+        return
+    
+    # Send processing message
+    processing_msg = await update.message.reply_text(f"🔄 Checking {len(codes)} codes... Please wait...")
+    
+    # Check codes
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    try:
+        session.get(REGISTER_URL, timeout=15)
+    except:
+        pass
+    
+    valid_codes = []
+    invalid_codes = []
+    error_codes = []
+    
+    for code in codes:
+        try:
+            is_valid, msg = check_coupon(code, session, phone)
+            if is_valid:
+                valid_codes.append(code)
+                save_valid_code(user_id, code)
+            else:
+                if "ERROR" in msg.upper() or "TIMEOUT" in msg.upper():
+                    error_codes.append((code, msg))
+                else:
+                    invalid_codes.append(code)
+            time.sleep(0.3)  # Delay between checks
+        except Exception as e:
+            error_codes.append((code, "Error"))
+    
+    # Build result message
+    result_text = f"✅ Code Check Results\n\n"
+    result_text += f"Total Checked: {len(codes)}\n"
+    result_text += f"✅ Valid: {len(valid_codes)}\n"
+    result_text += f"❌ Invalid: {len(invalid_codes)}\n"
+    result_text += f"⚠️ Errors: {len(error_codes)}\n\n"
+    
+    if valid_codes:
+        result_text += "✅ VALID CODES:\n"
+        for code in valid_codes[:20]:  # Show max 20 valid codes
+            result_text += f"✅ {code}\n"
+        if len(valid_codes) > 20:
+            result_text += f"... and {len(valid_codes) - 20} more valid codes\n"
+        result_text += "\n"
+    
+    if invalid_codes and len(invalid_codes) <= 10:
+        result_text += "❌ INVALID CODES:\n"
+        for code in invalid_codes:
+            result_text += f"❌ {code}\n"
+        result_text += "\n"
+    elif len(invalid_codes) > 10:
+        result_text += f"❌ {len(invalid_codes)} invalid codes (not shown)\n\n"
+    
+    if error_codes:
+        result_text += "⚠️ ERROR CODES:\n"
+        for code, error in error_codes[:5]:
+            result_text += f"⚠️ {code} - {error}\n"
+        if len(error_codes) > 5:
+            result_text += f"... and {len(error_codes) - 5} more errors\n"
+        result_text += "\n"
+    
+    if valid_codes:
+        result_text += f"💾 {len(valid_codes)} valid code(s) saved to your account!"
+    
+    # Edit the processing message
+    try:
+        await processing_msg.edit_text(result_text)
+    except:
+        await update.message.reply_text(result_text)
+
 async def live_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show live valid codes from all users"""
     user_id = update.effective_user.id
