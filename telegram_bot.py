@@ -76,11 +76,41 @@ DATA_FILE = "bot_data.json"
 active_miners = {}  # {user_id: {'running': bool, 'thread': thread, 'stats': {...}}}
 verified_users = set()  # Store verified user IDs
 file_lock = threading.Lock()
+app_event_loop = None  # Global reference to the application's event loop
 
 
 def schedule_coroutine(app, coroutine):
     """Safely run a coroutine from worker threads"""
-    asyncio.run_coroutine_threadsafe(coroutine, app.loop)
+    global app_event_loop
+    try:
+        # Try global loop first
+        loop = app_event_loop
+        
+        # If not available, try to get from app
+        if not loop:
+            if hasattr(app, 'updater') and app.updater:
+                try:
+                    loop = app.updater._loop
+                except:
+                    pass
+        
+        # If still not available, try other methods
+        if not loop:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                try:
+                    loop = asyncio.get_event_loop()
+                except:
+                    pass
+        
+        if loop and loop.is_running():
+            asyncio.run_coroutine_threadsafe(coroutine, loop)
+        elif loop:
+            # If loop exists but not running, schedule anyway
+            asyncio.run_coroutine_threadsafe(coroutine, loop)
+    except Exception as e:
+        print(f"Error scheduling coroutine: {e}")
 
 
 def update_status_message(user_id, stats, app, force=False):
@@ -847,11 +877,21 @@ def main():
         # Create application
         application = Application.builder().token(BOT_TOKEN).build()
         
+        # Store the event loop reference for worker threads
+        global app_event_loop
+        
+        async def store_loop(app):
+            global app_event_loop
+            app_event_loop = asyncio.get_running_loop()
+        
         # Add handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("setphone", setphone))
         application.add_handler(CommandHandler("live", live_codes))
         application.add_handler(CallbackQueryHandler(button_handler))
+        
+        # Store loop when application starts
+        application.post_init = store_loop
         
         # Start bot
         print("Bot is running! Press Ctrl+C to stop.")
