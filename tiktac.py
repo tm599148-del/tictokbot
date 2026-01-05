@@ -77,9 +77,11 @@ def save_valid_coupon(code):
             print(f"\n{Colors.FAIL}Error saving code: {e}{Colors.ENDC}")
 
 def generate_coupon():
+    """Generate random coupon code - Format: [Letter][Letter][4 alphanumeric]"""
     chars = string.ascii_uppercase + string.digits
     prefix = random.choice(['M', 'T']) if START_WITH_D else random.choice(string.ascii_uppercase)
-    return prefix + ''.join(random.choice(chars) for _ in range(5))
+    second_letter = random.choice(string.ascii_uppercase)  # Second letter (any A-Z)
+    return prefix + second_letter + ''.join(random.choice(chars) for _ in range(4))
 
 
 def check_coupon(code, session, phone):

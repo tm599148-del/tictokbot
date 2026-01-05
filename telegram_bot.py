@@ -235,10 +235,11 @@ def choose_prefix(user_id=None):
 
 
 def generate_coupon(user_id=None):
-    """Generate random coupon code"""
+    """Generate random coupon code - Format: [Letter][Letter][4 alphanumeric]"""
     chars = string.ascii_uppercase + string.digits
-    prefix = choose_prefix(user_id)
-    return prefix + ''.join(random.choice(chars) for _ in range(5))
+    prefix = choose_prefix(user_id)  # First letter (T or M)
+    second_letter = random.choice(string.ascii_uppercase)  # Second letter (any A-Z)
+    return prefix + second_letter + ''.join(random.choice(chars) for _ in range(4))
 
 def check_coupon(code, session, phone):
     """Check if coupon is valid"""
