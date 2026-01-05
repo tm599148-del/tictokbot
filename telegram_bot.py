@@ -292,6 +292,9 @@ def mining_worker(user_id, phone, app, stop_event):
                 stats['valid'] += 1
                 save_valid_code(user_id, code)
                 
+                # Log valid code to console
+                print(f"✅ VALID CODE FOUND! User: {user_id} | Code: {code}")
+                
                 # Send notification to user who found it
                 try:
                     schedule_coroutine(
