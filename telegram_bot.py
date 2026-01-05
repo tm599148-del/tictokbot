@@ -185,6 +185,7 @@ def get_user_data(user_id, username=None):
             'total_checked': 0,
             'valid_found': 0,
             'phone': "9876543210",
+            'prefixes': "T,M",
             'username': username or f"User_{user_id_str[:8]}",
             'created_at': datetime.now().isoformat()
         }
@@ -216,8 +217,16 @@ def save_valid_code(user_id, code):
         save_data(data)
     return True
 
-def choose_prefix():
-    """Pick a prefix letter (from configured list or random)"""
+def choose_prefix(user_id=None):
+    """Pick a prefix letter (from user's configured list or default)"""
+    if user_id:
+        user_data = get_user_data(user_id)
+        user_prefixes = user_data.get('prefixes', 'T,M')
+        prefixes_list = [p.strip().upper() for p in user_prefixes.split(",") if p.strip() and p.strip().isalpha()]
+        if prefixes_list:
+            return random.choice(prefixes_list)[0]
+    
+    # Fallback to default
     if START_PREFIXES:
         candidate = random.choice(START_PREFIXES)
         if candidate and candidate[0].isalpha():
@@ -225,10 +234,10 @@ def choose_prefix():
     return random.choice(string.ascii_uppercase)
 
 
-def generate_coupon():
+def generate_coupon(user_id=None):
     """Generate random coupon code"""
     chars = string.ascii_uppercase + string.digits
-    prefix = choose_prefix()
+    prefix = choose_prefix(user_id)
     return prefix + ''.join(random.choice(chars) for _ in range(5))
 
 def check_coupon(code, session, phone):
@@ -273,20 +282,61 @@ def mining_worker(user_id, phone, app, stop_event):
     except:
         pass
     
-    stats = {'checked': 0, 'valid': 0, 'last_code': '--'}
+    stats = {'checked': 0, 'valid': 0, 'last_code': '--', 'scan_log': []}
     if user_id in active_miners:
         active_miners[user_id]['stats'] = stats
+    
+    # Create live scanning message
+    live_scan_msg_id = None
+    try:
+        # Use a simpler approach - store message_id in miner state
+        if user_id in active_miners:
+            # Message will be created in start_mining handler
+            pass
+    except:
+        pass
     
     while not stop_event.is_set():
         if user_id not in active_miners or not active_miners[user_id]['running']:
             break
             
-        code = generate_coupon()
+        code = generate_coupon(user_id)
         stats['checked'] += 1
         stats['last_code'] = code
         
         try:
             is_valid, msg = check_coupon(code, session, phone)
+            
+            # Add to scan log (keep last 10 entries)
+            log_entry = f"{code} → "
+            if is_valid:
+                log_entry += "✅ VALID"
+            elif "SERVER ERROR" in msg.upper() or "TIMEOUT" in msg.upper():
+                log_entry += "⚠️ SERVER ERROR"
+            else:
+                log_entry += "❌ INVALID"
+            
+            stats['scan_log'].append(log_entry)
+            if len(stats['scan_log']) > 10:
+                stats['scan_log'].pop(0)
+            
+            # Update live scanning message
+            miner_state = active_miners.get(user_id)
+            if miner_state and miner_state.get('live_scan_message_id'):
+                try:
+                    scan_text = "🔍 LIVE SCANNING\n\n"
+                    for entry in stats['scan_log'][-10:]:
+                        scan_text += entry + "\n"
+                    schedule_coroutine(
+                        app,
+                        app.bot.edit_message_text(
+                            chat_id=user_id,
+                            message_id=miner_state['live_scan_message_id'],
+                            text=scan_text
+                        )
+                    )
+                except:
+                    pass
             
             if is_valid:
                 stats['valid'] += 1
@@ -497,12 +547,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         
+        user_phone = user_data.get('phone', '9876543210')
+        user_prefixes = user_data.get('prefixes', 'T,M')
+        
         await update.message.reply_text(
-            "👋 Welcome to TicTac Coupon Miner Bot!\n\n"
+            "👋 Welcome to TicTac Scanner Bot!\n\n"
+            "📱 Phone: " + user_phone + "\n"
+            "🔤 Prefixes: " + user_prefixes + "\n\n"
             "Your Stats:\n"
             f"- Valid Codes: {len(user_data['valid_codes'])}\n"
             f"- Total Checked: {user_data['total_checked']:,}\n\n"
-            "Use the buttons below to control mining.",
+            "⚠️ Scan start karne se pehle phone number set karna mandatory hai.\n\n"
+            "Steps:\n"
+            "1. /setphone 9XXXXXXXXX\n"
+            "2. ► Start Scan button dabao",
             reply_markup=reply_markup
         )
     except Exception as e:
@@ -527,6 +585,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_data = get_user_data(user_id, username)
         
         keyboard = [
+            [InlineKeyboardButton("📱 Set Phone", callback_data="set_phone")],
+            [InlineKeyboardButton("🔤 Set Prefix", callback_data="set_prefix")],
             [InlineKeyboardButton("🚀 Start Mining", callback_data="start_mining")],
             [InlineKeyboardButton("⏹️ Stop Mining", callback_data="stop_mining")],
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
@@ -538,14 +598,74 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         
+        user_phone = user_data.get('phone', '9876543210')
+        user_prefixes = user_data.get('prefixes', 'T,M')
+        
         await query.edit_message_text(
             "✅ Verification Successful!\n\n"
-            "Welcome to TicTac Coupon Miner Bot!\n\n"
+            "📱 Phone: " + user_phone + "\n"
+            "🔤 Prefixes: " + user_prefixes + "\n\n"
             "Your Stats:\n"
             f"- Valid Codes: {len(user_data['valid_codes'])}\n"
             f"- Total Checked: {user_data['total_checked']:,}\n\n"
-            "Use the buttons below to control mining.",
+            "⚠️ Scan start karne se pehle phone number set karna mandatory hai.",
             reply_markup=reply_markup
+        )
+    
+    elif data == "set_phone":
+        await query.edit_message_text(
+            "📱 Set Phone Number\n\n"
+            "Usage: /setphone 9876543210\n\n"
+            "Example: /setphone 9131349212\n\n"
+            "Please send your phone number using the command above.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]])
+        )
+    
+    elif data == "set_prefix":
+        user_data = get_user_data(user_id)
+        current_prefixes = user_data.get('prefixes', 'T,M')
+        keyboard = [
+            [InlineKeyboardButton("🔤 T, M", callback_data="prefix_T,M")],
+            [InlineKeyboardButton("🔤 T, M, D", callback_data="prefix_T,M,D")],
+            [InlineKeyboardButton("🔤 T", callback_data="prefix_T")],
+            [InlineKeyboardButton("🔤 M", callback_data="prefix_M")],
+            [InlineKeyboardButton("🔤 D", callback_data="prefix_D")],
+            [InlineKeyboardButton("🔙 Back", callback_data="back_menu")]
+        ]
+        await query.edit_message_text(
+            f"🔤 Set Prefix Letters\n\n"
+            f"Current: {current_prefixes}\n\n"
+            f"Select prefix letters for code generation:\n"
+            f"• T, M = Generate codes starting with T or M\n"
+            f"• T, M, D = Generate codes starting with T, M, or D\n\n"
+            f"Or use /setprefix T,M,D to set custom prefixes",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    
+    elif data.startswith("prefix_"):
+        prefixes = data.replace("prefix_", "").upper()
+        user_data = get_user_data(user_id)
+        user_data['prefixes'] = prefixes
+        data_dict = load_data()
+        data_dict[str(user_id)] = user_data
+        save_data(data_dict)
+        
+        keyboard = [
+            [InlineKeyboardButton("📱 Set Phone", callback_data="set_phone")],
+            [InlineKeyboardButton("🔤 Set Prefix", callback_data="set_prefix")],
+            [InlineKeyboardButton("🚀 Start Mining", callback_data="start_mining")],
+            [InlineKeyboardButton("⏹️ Stop Mining", callback_data="stop_mining")],
+            [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
+            [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
+        ]
+        if user_id == ADMIN_ID:
+            keyboard.append([InlineKeyboardButton("👑 Admin Panel", callback_data="admin_panel")])
+        
+        await query.edit_message_text(
+            f"✅ Prefix Updated!\n\n"
+            f"New Prefixes: {prefixes}\n\n"
+            f"Codes will now be generated starting with: {', '.join(prefixes.split(','))}",
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
     
     elif data == "start_mining":
@@ -567,10 +687,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'running': True,
             'thread': thread,
             'stop_event': stop_event,
-            'stats': {'checked': 0, 'valid': 0, 'last_code': '--'},
+            'stats': {'checked': 0, 'valid': 0, 'last_code': '--', 'scan_log': []},
             'status_message_id': None,
+            'live_scan_message_id': None,
             'last_status_push': 0
         }
+        
+        # Create live scanning message
+        live_msg = await context.bot.send_message(
+            chat_id=user_id,
+            text="🔍 LIVE SCANNING\n\nStarting scan...\n"
+        )
+        active_miners[user_id]['live_scan_message_id'] = live_msg.message_id
         
         status_message = await context.bot.send_message(
             chat_id=user_id,
@@ -770,18 +898,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_data = get_user_data(user_id)
         
         keyboard = [
+            [InlineKeyboardButton("📱 Set Phone", callback_data="set_phone")],
+            [InlineKeyboardButton("🔤 Set Prefix", callback_data="set_prefix")],
             [InlineKeyboardButton("🚀 Start Mining", callback_data="start_mining")],
             [InlineKeyboardButton("⏹️ Stop Mining", callback_data="stop_mining")],
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
             [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
-            [InlineKeyboardButton("🔥 Live Valid Codes", callback_data="live_codes")],
         ]
         
         if user_id == ADMIN_ID:
             keyboard.append([InlineKeyboardButton("👑 Admin Panel", callback_data="admin_panel")])
         
+        user_phone = user_data.get('phone', '9876543210')
+        user_prefixes = user_data.get('prefixes', 'T,M')
+        
         await query.edit_message_text(
-            f"👋 TicTac Coupon Miner Bot\n\n"
+            f"👋 TicTac Scanner Bot\n\n"
+            f"📱 Phone: {user_phone}\n"
+            f"🔤 Prefixes: {user_prefixes}\n\n"
             f"📊 Your Stats:\n"
             f"- Valid Codes: {len(user_data['valid_codes'])}\n"
             f"- Total Checked: {user_data['total_checked']:,}\n\n"
@@ -820,7 +954,7 @@ async def setphone(update: Update, context: ContextTypes.DEFAULT_TYPE):
             data[user_id_str]['username'] = username
     
     save_data(data)
-    await update.message.reply_text(f"✅ Phone number set to: {phone}\n\nYou can now start mining!")
+    await update.message.reply_text(f"✅ Phone number set: {phone}\n\nYou can now start scanning!")
 
 async def live_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show live valid codes from all users"""
@@ -890,6 +1024,7 @@ def main():
         # Add handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("setphone", setphone))
+        application.add_handler(CommandHandler("setprefix", setprefix))
         application.add_handler(CommandHandler("live", live_codes))
         application.add_handler(CallbackQueryHandler(button_handler))
         
