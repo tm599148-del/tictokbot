@@ -47,14 +47,14 @@ if sys.platform == 'win32':
 # Bot Configuration - Can be set via environment variables for Render
 BOT_TOKEN = os.getenv("BOT_TOKEN", "8208170457:AAEznHYzZw6VDSjrK5VDoL88rVwuEUGVi_A")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "7200333065"))
-GROUP_LINK = os.getenv("GROUP_LINK", "https://t.me/shien_help")
-GROUP_USERNAME = os.getenv("GROUP_USERNAME", "shien_help")  # Without @
+GROUP_LINK = os.getenv("GROUP_LINK", "https://t.me/+w7VwgotOFrRkNTM1")
+GROUP_USERNAME = os.getenv("GROUP_USERNAME", "w7VwgotOFrRkNTM1")  # Without @
 LIVE_CHANNEL_ID = os.getenv("LIVE_CHANNEL_ID", None)  # Channel ID for live valid codes (optional)
 
 # Mining Configuration
 NUM_THREADS = 10
 DELAY_PER_REQUEST = 0.5
-START_LETTER = os.getenv("START_LETTER", "T").strip().upper() or None
+START_PREFIXES = [p.strip().upper() for p in os.getenv("START_PREFIXES", "T,D").split(",") if p.strip()]
 
 # API Configuration
 BASE_URL = "https://www.tictac.com"
@@ -76,6 +76,41 @@ DATA_FILE = "bot_data.json"
 active_miners = {}  # {user_id: {'running': bool, 'thread': thread, 'stats': {...}}}
 verified_users = set()  # Store verified user IDs
 file_lock = threading.Lock()
+
+
+def update_status_message(user_id, stats, app, force=False):
+    """Edit the live status message for a user"""
+    miner_state = active_miners.get(user_id)
+    if not miner_state:
+        return
+    message_id = miner_state.get('status_message_id')
+    if not message_id:
+        return
+    now = time.time()
+    if not force:
+        last_push = miner_state.get('last_status_push', 0)
+        if now - last_push < 5:
+            return
+    miner_state['last_status_push'] = now
+    text = (
+        "⚙️ Live Mining Status\n"
+        f"Checked: {stats.get('checked', 0):,}\n"
+        f"Valid: {stats.get('valid', 0)}\n"
+        f"Last Code: {stats.get('last_code', '--')}\n"
+        f"Threads Active: {NUM_THREADS}\n"
+        f"Updated: {datetime.now().strftime('%H:%M:%S')}"
+    )
+    try:
+        asyncio.run_coroutine_threadsafe(
+            app.bot.edit_message_text(
+                chat_id=user_id,
+                message_id=message_id,
+                text=text
+            ),
+            app._loop
+        )
+    except Exception as e:
+        print(f"Error updating status message for {user_id}: {e}")
 
 def load_data():
     """Load user data from file"""
@@ -137,11 +172,19 @@ def save_valid_code(user_id, code):
         save_data(data)
     return True
 
+def choose_prefix():
+    """Pick a prefix letter (from configured list or random)"""
+    if START_PREFIXES:
+        candidate = random.choice(START_PREFIXES)
+        if candidate and candidate[0].isalpha():
+            return candidate[0]
+    return random.choice(string.ascii_uppercase)
+
+
 def generate_coupon():
     """Generate random coupon code"""
     chars = string.ascii_uppercase + string.digits
-    forced = START_LETTER[0] if START_LETTER and START_LETTER[0].isalpha() else None
-    prefix = forced or random.choice(string.ascii_uppercase)
+    prefix = choose_prefix()
     return prefix + ''.join(random.choice(chars) for _ in range(5))
 
 def check_coupon(code, session, phone):
@@ -180,7 +223,7 @@ def mining_worker(user_id, phone, app, stop_event):
     except:
         pass
     
-    stats = {'checked': 0, 'valid': 0}
+    stats = {'checked': 0, 'valid': 0, 'last_code': '--'}
     if user_id in active_miners:
         active_miners[user_id]['stats'] = stats
     
@@ -190,6 +233,7 @@ def mining_worker(user_id, phone, app, stop_event):
             
         code = generate_coupon()
         stats['checked'] += 1
+        stats['last_code'] = code
         
         try:
             is_valid, msg = check_coupon(code, session, phone)
@@ -239,6 +283,24 @@ def mining_worker(user_id, phone, app, stop_event):
                                 print(f"Error sending live code to {uid}: {e}")
                 except Exception as e:
                     print(f"Error broadcasting code: {e}")
+
+                if stats['valid'] % 10 == 0:
+                    try:
+                        milestone_data = get_user_data(user_id)
+                        recent_codes = milestone_data['valid_codes'][-10:] or milestone_data['valid_codes']
+                        summary_text = "🏆 Valid Code Milestone Reached!\n"
+                        summary_text += f"Total Valid Codes: {len(milestone_data['valid_codes'])}\n"
+                        summary_text += "Last 10 codes:\n"
+                        summary_text += "\n".join(recent_codes)
+                        asyncio.run_coroutine_threadsafe(
+                            app.bot.send_message(
+                                chat_id=user_id,
+                                text=summary_text
+                            ),
+                            app._loop
+                        )
+                    except Exception as e:
+                        print(f"Error sending milestone summary to {user_id}: {e}")
             
             # Update stats every 100 codes (less spam)
             if stats['checked'] % 100 == 0:
@@ -255,6 +317,7 @@ def mining_worker(user_id, phone, app, stop_event):
         except Exception as e:
             print(f"Error in mining worker: {e}")
         
+        update_status_message(user_id, stats, app)
         time.sleep(DELAY_PER_REQUEST)
     
     # Update total checked in user data
@@ -284,6 +347,27 @@ def mining_worker(user_id, phone, app, stop_event):
         )
     except:
         pass
+    
+    try:
+        miner_state = active_miners.get(user_id)
+        if miner_state and miner_state.get('status_message_id'):
+            final_text = (
+                "✅ Mining Session Finished\n"
+                f"Checked: {stats['checked']:,}\n"
+                f"Valid Found: {stats['valid']}\n"
+                f"Last Code: {stats.get('last_code', '--')}"
+            )
+            asyncio.run_coroutine_threadsafe(
+                app.bot.edit_message_text(
+                    chat_id=user_id,
+                    message_id=miner_state['status_message_id'],
+                    text=final_text
+                ),
+                app._loop
+            )
+            miner_state['status_message_id'] = None
+    except Exception as e:
+        print(f"Error finalizing status message for {user_id}: {e}")
     
     # Clean up
     if user_id in active_miners:
@@ -430,8 +514,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'running': True,
             'thread': thread,
             'stop_event': stop_event,
-            'stats': {'checked': 0, 'valid': 0}
+            'stats': {'checked': 0, 'valid': 0, 'last_code': '--'},
+            'status_message_id': None,
+            'last_status_push': 0
         }
+        
+        status_message = await context.bot.send_message(
+            chat_id=user_id,
+            text=(
+                "⚙️ Live Mining Status\n"
+                "Checked: 0\n"
+                "Valid: 0\n"
+                "Last Code: --\n"
+                "Threads Active: {0}".format(NUM_THREADS)
+            )
+        )
+        active_miners[user_id]['status_message_id'] = status_message.message_id
+        active_miners[user_id]['last_status_push'] = 0
         
         thread.start()
         

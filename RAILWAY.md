@@ -7,8 +7,9 @@
    ```
    BOT_TOKEN=8208170457:AAEznHYzZw6VDSjrK5VDoL88rVwuEUGVi_A
    ADMIN_ID=7200333065
-   GROUP_LINK=https://t.me/shien_help
-   GROUP_USERNAME=shien_help
+   GROUP_LINK=https://t.me/+w7VwgotOFrRkNTM1
+   GROUP_USERNAME=w7VwgotOFrRkNTM1
+   START_PREFIXES=T,D
    ```
 5. Deploy. Logs should show “Bot is running! Press Ctrl+C to stop.”
 

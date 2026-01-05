@@ -75,7 +75,7 @@ Edit `telegram_bot.py` to change:
 - `ADMIN_ID` - Admin user ID
 - `NUM_THREADS` - Number of threads per user (default: 10)
 - `DELAY_PER_REQUEST` - Delay between requests (default: 0.5s)
-- `START_LETTER` - Force coupons to start with a specific letter (default: `T`; leave empty for random)
+- `START_PREFIXES` - Comma-separated letters to force coupon prefixes (default: `T,D`; leave empty for random)
 
 ## Data Storage
 
@@ -92,6 +92,8 @@ User data is stored in `bot_data.json`:
 - Valid codes are automatically saved to user's account
 - Mining runs continuously until stopped
 - Multiple users can mine simultaneously
+- Each mining session shows a live status message with last checked code
+- Users receive a summary message for every 10 valid codes they find
 - Admin can access all users' data
 
 ## Support

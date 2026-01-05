@@ -30,7 +30,7 @@ REAL_PHONE = "9876543210"          #Add any random 10 digit number or remain sam
 NUM_THREADS = 20
 NUM_CODES_TO_TRY = 100000         
 DELAY_PER_REQUEST = 0.5
-START_LETTER = os.getenv("START_LETTER", "T").strip().upper() or None
+START_PREFIXES = [p.strip().upper() for p in os.getenv("START_PREFIXES", "T,D").split(",") if p.strip()]
 SAVE_FILE = "VALID_TICTAC_COUPONS_LIVEs.txt"
 
 BASE_URL = "https://www.tictac.com"
@@ -75,10 +75,17 @@ def save_valid_coupon(code):
         except Exception as e:
             print(f"\n{Colors.FAIL}Error saving code: {e}{Colors.ENDC}")
 
+def choose_prefix():
+    if START_PREFIXES:
+        candidate = random.choice(START_PREFIXES)
+        if candidate and candidate[0].isalpha():
+            return candidate[0]
+    return random.choice(string.ascii_uppercase)
+
+
 def generate_coupon():
     chars = string.ascii_uppercase + string.digits
-    forced = START_LETTER[0] if START_LETTER and START_LETTER[0].isalpha() else None
-    prefix = forced or random.choice(string.ascii_uppercase)
+    prefix = choose_prefix()
     return prefix + ''.join(random.choice(chars) for _ in range(5))
 
 
