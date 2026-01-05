@@ -202,8 +202,7 @@ def mining_worker(user_id, phone, app, stop_event):
                     asyncio.run_coroutine_threadsafe(
                         app.bot.send_message(
                             chat_id=user_id,
-                            text=f"🎉 *VALID CODE FOUND!*\n\n`{code}`\n\n✅ Code saved to your account!",
-                            parse_mode='Markdown'
+                            text=f"🎉 VALID CODE FOUND!\n\nCode: {code}\nSaved to your account!"
                         ),
                         app._loop
                     )
@@ -227,12 +226,11 @@ def mining_worker(user_id, phone, app, stop_event):
                                     app.bot.send_message(
                                         chat_id=uid,
                                         text=(
-                                            f"🔥 *LIVE VALID CODE!*\n\n"
-                                            f"`{code}`\n"
-                                            f"Finder: `{user_data.get('username', 'Unknown')}`\n"
-                                            f"Saved in shared log!"
-                                        ),
-                                        parse_mode='Markdown'
+                                            "🔥 LIVE VALID CODE!\n\n"
+                                            f"Code: {code}\n"
+                                            f"Finder: {user_data.get('username', 'Unknown')}\n"
+                                            "Saved in shared log!"
+                                        )
                                     ),
                                     app._loop
                                 )
@@ -247,8 +245,7 @@ def mining_worker(user_id, phone, app, stop_event):
                     asyncio.run_coroutine_threadsafe(
                         app.bot.send_message(
                             chat_id=user_id,
-                            text=f"📊 *Mining Progress*\n\nChecked: {stats['checked']:,}\nValid: {stats['valid']}",
-                            parse_mode='Markdown'
+                            text=f"📊 Mining Progress\n\nChecked: {stats['checked']:,}\nValid: {stats['valid']}"
                         ),
                         app._loop
                     )
@@ -275,8 +272,12 @@ def mining_worker(user_id, phone, app, stop_event):
         asyncio.run_coroutine_threadsafe(
             app.bot.send_message(
                 chat_id=user_id,
-                text=f"⏹️ *Mining Stopped*\n\n📊 Final Stats:\nChecked: {stats['checked']:,}\nValid Found: {stats['valid']}\nTotal Valid Codes: {len(user_data['valid_codes'])}",
-                parse_mode='Markdown'
+                text=(
+                    "⏹️ Mining Stopped\n\n"
+                    f"Final Stats:\nChecked: {stats['checked']:,}\n"
+                    f"Valid Found: {stats['valid']}\n"
+                    f"Total Valid Codes: {len(user_data['valid_codes'])}"
+                )
             ),
             app._loop
         )
@@ -335,11 +336,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
                 await update.message.reply_text(
-                    f"⚠️ *Group Verification Required*\n\n"
-                    f"📢 Please join our group to use this bot:\n"
-                    f"👉 {GROUP_LINK}\n\n"
-                    f"After joining, click the verify button below:",
-                    parse_mode='Markdown',
+                    "⚠️ Group Verification Required\n\n"
+                    f"Please join our group to use this bot:\n{GROUP_LINK}\n\n"
+                    "After joining, click the verify button below:",
                     reply_markup=reply_markup
                 )
                 return
@@ -361,12 +360,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.message.reply_text(
-            f"👋 Welcome to *TicTac Coupon Miner Bot*!\n\n"
-            f"📊 Your Stats:\n"
-            f"• Valid Codes: {len(user_data['valid_codes'])}\n"
-            f"• Total Checked: {user_data['total_checked']:,}\n\n"
-            f"Use buttons below to control mining:",
-            parse_mode='Markdown',
+            "👋 Welcome to TicTac Coupon Miner Bot!\n\n"
+            "Your Stats:\n"
+            f"- Valid Codes: {len(user_data['valid_codes'])}\n"
+            f"- Total Checked: {user_data['total_checked']:,}\n\n"
+            "Use the buttons below to control mining.",
             reply_markup=reply_markup
         )
     except Exception as e:
@@ -403,13 +401,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(
-            f"✅ *Verification Successful!*\n\n"
-            f"👋 Welcome to *TicTac Coupon Miner Bot*!\n\n"
-            f"📊 Your Stats:\n"
-            f"• Valid Codes: {len(user_data['valid_codes'])}\n"
-            f"• Total Checked: {user_data['total_checked']:,}\n\n"
-            f"Use buttons below to control mining:",
-            parse_mode='Markdown',
+            "✅ Verification Successful!\n\n"
+            "Welcome to TicTac Coupon Miner Bot!\n\n"
+            "Your Stats:\n"
+            f"- Valid Codes: {len(user_data['valid_codes'])}\n"
+            f"- Total Checked: {user_data['total_checked']:,}\n\n"
+            "Use the buttons below to control mining.",
             reply_markup=reply_markup
         )
     
@@ -438,10 +435,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         thread.start()
         
         await query.edit_message_text(
-            "✅ *Mining Started!*\n\n"
-            "🔍 Scanning codes...\n"
-            "You'll be notified when valid codes are found!",
-            parse_mode='Markdown'
+            "✅ Mining Started!\n\n"
+            "Scanning codes...\n"
+            "You'll be notified when valid codes are found!"
         )
     
     elif data == "stop_mining":
@@ -456,18 +452,18 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif data == "my_stats":
         user_data = get_user_data(user_id)
-        stats_text = f"📊 *Your Mining Stats*\n\n"
-        stats_text += f"✅ Valid Codes Found: {len(user_data['valid_codes'])}\n"
-        stats_text += f"🔍 Total Checked: {user_data['total_checked']:,}\n"
+        stats_text = "📊 Your Mining Stats\n\n"
+        stats_text += f"Valid Codes Found: {len(user_data['valid_codes'])}\n"
+        stats_text += f"Total Checked: {user_data['total_checked']:,}\n"
         
         if user_id in active_miners and active_miners[user_id]['running']:
             current_stats = active_miners[user_id]['stats']
-            stats_text += f"\n🔄 *Current Session:*\n"
+            stats_text += "\nCurrent Session:\n"
             stats_text += f"Checked: {current_stats.get('checked', 0):,}\n"
             stats_text += f"Valid: {current_stats.get('valid', 0)}"
         
         keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
-        await query.edit_message_text(stats_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text(stats_text, reply_markup=InlineKeyboardMarkup(keyboard))
     
     elif data == "live_codes":
         # Show live valid codes from all users
@@ -486,20 +482,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ No valid codes found yet. Start mining to find codes!")
             return
         
-        codes_text = f"🔥 *LIVE VALID CODES* ({len(all_codes)} total)\n\n```\n"
+        codes_text = f"🔥 LIVE VALID CODES ({len(all_codes)} total)\n\n"
         
         for item in all_codes[-30:]:
             codes_text += f"{item['code']} - {item['user']}\n"
         
-        codes_text += "```\n"
+        codes_text += "\n"
         
         if len(all_codes) > 30:
-            codes_text += f"\n_Showing last 30 codes. Total: {len(all_codes)}_\n"
+            codes_text += f"\nShowing last 30 codes. Total: {len(all_codes)}\n"
         
-        codes_text += "\n💡 *Tip:* Use /live command for full list!"
+        codes_text += "\n💡 Tip: Use /live command for full list!"
         
         keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
-        await query.edit_message_text(codes_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text(codes_text, reply_markup=InlineKeyboardMarkup(keyboard))
     
     elif data == "toggle_live_log":
         data_dict = load_data()
@@ -512,9 +508,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         status = "ON" if new_state else "OFF"
         keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
         await query.edit_message_text(
-            f"📣 Live valid code logs are now *{status}*.\n\n"
+            f"📣 Live valid code logs are now {status}.\n\n"
             "When ON, you will get real-time logged codes similar to the VALID_TICTAC_COUPONS file.",
-            parse_mode='Markdown',
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
@@ -526,17 +521,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ No valid codes found yet. Start mining to find codes!")
             return
         
-        codes_text = f"💎 *Your Valid Codes* ({len(codes)})\n\n"
-        codes_text += "```\n"
+        codes_text = f"💎 Your Valid Codes ({len(codes)})\n\n"
         for code in codes[-20:]:  # Show last 20 codes
             codes_text += f"{code}\n"
-        codes_text += "```\n"
+        codes_text += "\n"
         
         if len(codes) > 20:
-            codes_text += f"\n_Showing last 20 codes. Total: {len(codes)}_"
+            codes_text += f"\nShowing last 20 codes. Total: {len(codes)}"
         
         keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_menu")]]
-        await query.edit_message_text(codes_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text(codes_text, reply_markup=InlineKeyboardMarkup(keyboard))
     
     elif data == "admin_panel":
         if user_id != ADMIN_ID:
@@ -555,11 +549,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
         
         await query.edit_message_text(
-            f"👑 *Admin Panel*\n\n"
+            f"👑 Admin Panel\n\n"
             f"📊 Total Users: {total_users}\n"
             f"💎 Total Valid Codes: {total_codes}\n\n"
             f"Select an option:",
-            parse_mode='Markdown',
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     
@@ -568,7 +561,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         admin_data = load_data()
-        stats_text = "📊 *All Users Stats*\n\n"
+        stats_text = "📊 All Users Stats\n\n"
         
         for uid, user_data in list(admin_data.items())[:20]:
             username = user_data.get('username', f"User {uid[:8]}")
@@ -577,7 +570,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             stats_text += f"   🔍 Checked: {user_data.get('total_checked', 0):,}\n\n"
         
         keyboard = [[InlineKeyboardButton("🔙 Back to Admin", callback_data="admin_panel")]]
-        await query.edit_message_text(stats_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text(stats_text, reply_markup=InlineKeyboardMarkup(keyboard))
     
     elif data == "admin_codes":
         if user_id != ADMIN_ID:
@@ -594,23 +587,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ No valid codes found from any user yet.")
             return
         
-        codes_text = f"💎 *All Valid Codes* ({len(all_codes)})\n\n```\n"
+        codes_text = f"💎 All Valid Codes ({len(all_codes)})\n\n"
         for code in all_codes[-30:]:  # Show last 30
             codes_text += f"{code}\n"
-        codes_text += "```\n"
+        codes_text += "\n"
         
         if len(all_codes) > 30:
-            codes_text += f"\n_Showing last 30 codes. Total: {len(all_codes)}_"
+            codes_text += f"\nShowing last 30 codes. Total: {len(all_codes)}"
         
         keyboard = [[InlineKeyboardButton("🔙 Back to Admin", callback_data="admin_panel")]]
-        await query.edit_message_text(codes_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text(codes_text, reply_markup=InlineKeyboardMarkup(keyboard))
     
     elif data == "admin_users":
         if user_id != ADMIN_ID:
             return
         
         admin_data = load_data()
-        users_text = "👥 *All Users*\n\n"
+        users_text = "👥 All Users\n\n"
         
         for idx, (uid, user_data) in enumerate(list(admin_data.items())[:30], 1):
             username = user_data.get('username', f"User {uid[:8]}")
@@ -618,7 +611,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             users_text += f"   Codes: {len(user_data['valid_codes'])}\n\n"
         
         keyboard = [[InlineKeyboardButton("🔙 Back to Admin", callback_data="admin_panel")]]
-        await query.edit_message_text(users_text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text(users_text, reply_markup=InlineKeyboardMarkup(keyboard))
     
     elif data == "back_menu":
         user_data = get_user_data(user_id)
@@ -635,12 +628,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard.append([InlineKeyboardButton("👑 Admin Panel", callback_data="admin_panel")])
         
         await query.edit_message_text(
-            f"👋 *TicTac Coupon Miner Bot*\n\n"
+            f"👋 TicTac Coupon Miner Bot\n\n"
             f"📊 Your Stats:\n"
-            f"• Valid Codes: {len(user_data['valid_codes'])}\n"
-            f"• Total Checked: {user_data['total_checked']:,}\n\n"
+            f"- Valid Codes: {len(user_data['valid_codes'])}\n"
+            f"- Total Checked: {user_data['total_checked']:,}\n\n"
             f"Use buttons below to control mining:",
-            parse_mode='Markdown',
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
@@ -649,7 +641,7 @@ async def setphone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     
     if not context.args:
-        await update.message.reply_text("❌ Please provide a phone number!\n\nUsage: `/setphone 9876543210`", parse_mode='Markdown')
+        await update.message.reply_text("❌ Please provide a phone number!\n\nUsage: /setphone 9876543210")
         return
     
     phone = context.args[0]
@@ -675,7 +667,7 @@ async def setphone(update: Update, context: ContextTypes.DEFAULT_TYPE):
             data[user_id_str]['username'] = username
     
     save_data(data)
-    await update.message.reply_text(f"✅ Phone number set to: `{phone}`\n\nYou can now start mining!", parse_mode='Markdown')
+    await update.message.reply_text(f"✅ Phone number set to: {phone}\n\nYou can now start mining!")
 
 async def live_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show live valid codes from all users"""
@@ -704,21 +696,20 @@ async def live_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # Sort by most recent (if we had timestamps, but for now just show all)
-    codes_text = f"🔥 *LIVE VALID CODES* ({len(all_codes)} total)\n\n"
-    codes_text += "```\n"
+    codes_text = f"🔥 LIVE VALID CODES ({len(all_codes)} total)\n\n"
     
     # Show last 50 codes
     for item in all_codes[-50:]:
         codes_text += f"{item['code']} - {item['user']}\n"
     
-    codes_text += "```\n"
+    codes_text += "\n"
     
     if len(all_codes) > 50:
-        codes_text += f"\n_Showing last 50 codes. Total: {len(all_codes)}_\n"
+        codes_text += f"\nShowing last 50 codes. Total: {len(all_codes)}\n"
     
-    codes_text += "\n💡 *Tip:* Start mining to find more codes!"
+    codes_text += "\n💡 Tip: Start mining to find more codes!"
     
-    await update.message.reply_text(codes_text, parse_mode='Markdown')
+    await update.message.reply_text(codes_text)
 
 def main():
     """Start the bot"""
