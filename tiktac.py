@@ -26,7 +26,7 @@ if sys.platform == 'win32':
     except:
         pass
 
-REAL_PHONE = "9876543220"          #Add any random 10 digit number or remain same 
+REAL_PHONE = "9876543741"          #Add any random 10 digit number or remain same 
 NUM_THREADS = 20
 NUM_CODES_TO_TRY = 100000         
 DELAY_PER_REQUEST = 0.5
@@ -36,6 +36,7 @@ SAVE_FILE = "VALID_TICTAC_COUPONS_LIVE.txt"
 BASE_URL = "https://jarpecarpromo.tictac.com"
 REGISTER_URL = f"{BASE_URL}/in/en/xp/jarpecarpromo/home/register"
 OTP_URL = f"{BASE_URL}/in/en/xp/jarpecarpromo/home/generateOTP/"
+
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Linux; Android 10; RMX2030) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.116 Mobile Safari/537.36',
