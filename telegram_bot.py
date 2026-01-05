@@ -237,9 +237,9 @@ def mining_worker(user_id, phone, app, stop_event):
                                     app._loop
                                 )
                             except Exception as e:
-                                print(f\"Error sending live code to {uid}: {e}\")
+                                print(f"Error sending live code to {uid}: {e}")
                 except Exception as e:
-                    print(f\"Error broadcasting code: {e}\")
+                    print(f"Error broadcasting code: {e}")
             
             # Update stats every 100 codes (less spam)
             if stats['checked'] % 100 == 0:
@@ -353,7 +353,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
             [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
             [InlineKeyboardButton("🔥 Live Valid Codes", callback_data="live_codes")],
-            [InlineKeyboardButton("📣 Toggle Live Log", callback_data="toggle_live_log")],
         ]
         
         if user_id == ADMIN_ID:
@@ -396,7 +395,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("⏹️ Stop Mining", callback_data="stop_mining")],
             [InlineKeyboardButton("📊 My Stats", callback_data="my_stats")],
             [InlineKeyboardButton("💎 My Valid Codes", callback_data="my_codes")],
-            [InlineKeyboardButton("📣 Toggle Live Log", callback_data="toggle_live_log")],
         ]
         
         if user_id == ADMIN_ID:
